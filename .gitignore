@@ -6,6 +6,7 @@
 node_modules/
 yarn-error.log
 
+/integration/playwright-report
 /jacob
 /fixtures/cloudflare
 /fixtures/test

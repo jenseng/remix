@@ -3,7 +3,7 @@ import fse from "fs-extra";
 import path from "path";
 import JSON5 from "json5";
 
-import { createFixture, json } from "./helpers/create-fixture";
+import { createFixture, json } from "./helpers/create-fixture.js";
 
 async function getTsConfig(projectDir: string) {
   let tsconfigPath = path.join(projectDir, "tsconfig.json");

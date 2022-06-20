@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-import { createFixture, js, json, mdx } from "./helpers/create-fixture";
+import { createFixture, js, json, mdx } from "./helpers/create-fixture.js";
 import type { Fixture } from "./helpers/create-fixture";
 
 let fixture: Fixture;

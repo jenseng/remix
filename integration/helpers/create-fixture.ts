@@ -4,15 +4,18 @@ import type { Writable } from "stream";
 import express from "express";
 import getPort from "get-port";
 import stripIndent from "strip-indent";
-import chalk from "chalk";
 import { sync as spawnSync } from "cross-spawn";
 import type { JsonObject } from "type-fest";
+import { fileURLToPath } from "url";
 
-import type { ServerBuild } from "../../build/node_modules/@remix-run/server-runtime";
-import { createRequestHandler } from "../../build/node_modules/@remix-run/server-runtime";
-import { createRequestHandler as createExpressHandler } from "../../build/node_modules/@remix-run/express";
+import type { ServerBuild } from "../../build/node_modules/@remix-run/server-runtime/index.js";
+import { createRequestHandler } from "../../build/node_modules/@remix-run/server-runtime/index.js";
+import { createRequestHandler as createExpressHandler } from "../../build/node_modules/@remix-run/express/index.js";
+import { readConfig } from "../../build/node_modules/@remix-run/dev/config.js";
 
 const TMP_DIR = path.join(process.cwd(), ".tmp", "integration");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 interface FixtureInit {
   buildStdio?: Writable;
@@ -34,17 +37,8 @@ export function json(value: JsonObject) {
 
 export async function createFixture(init: FixtureInit) {
   let projectDir = await createFixtureProject(init);
-  let buildPath = path.resolve(projectDir, "build");
-  if (!fse.existsSync(buildPath)) {
-    throw new Error(
-      chalk.red(
-        `Expected build directory to exist at ${chalk.dim(
-          buildPath
-        )}. The build probably failed. Did you maybe have a syntax error in your test code strings?`
-      )
-    );
-  }
-  let app: ServerBuild = await import(buildPath);
+  let { serverBuildPath } = await readConfig(projectDir);
+  let app: ServerBuild = await import(serverBuildPath);
   let handler = createRequestHandler(app, "production");
 
   let requestDocument = async (href: string, init?: RequestInit) => {
@@ -205,7 +199,8 @@ async function writeTestFiles(init: FixtureInit, dir: string) {
     Object.keys(init.files).map(async (filename) => {
       let filePath = path.join(dir, filename);
       await fse.ensureDir(path.dirname(filePath));
-      await fse.writeFile(filePath, stripIndent(init.files[filename]));
+      let contents = init.files[filename];
+      await fse.writeFile(filePath, stripIndent(contents));
     })
   );
 }

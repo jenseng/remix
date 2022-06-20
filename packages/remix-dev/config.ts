@@ -18,6 +18,7 @@ export type RemixMdxConfigFunction = (
 ) => Promise<RemixMdxConfig | undefined> | RemixMdxConfig | undefined;
 
 export type ServerBuildTarget =
+  | "node"
   | "node-cjs"
   | "arc"
   | "netlify"
@@ -253,7 +254,7 @@ export interface RemixConfig {
 }
 
 /**
- * Returns a fully resolved config object from the remix.config.js in the given
+ * Returns a fully resolved config object from the remix.config.* in the given
  * root directory.
  */
 export async function readConfig(
@@ -269,11 +270,14 @@ export async function readConfig(
   }
 
   let rootDirectory = path.resolve(remixRoot);
-  let configFile = path.resolve(rootDirectory, "remix.config.js");
-
   let appConfig: AppConfig;
+  let configFile = findConfig(rootDirectory, "remix.config");
+  if (!configFile) {
+    throw new Error(`Missing "remix.config" file in ${rootDirectory}`);
+  }
   try {
-    appConfig = require(configFile);
+    let appConfigModule = await import(configFile);
+    appConfig = appConfigModule?.default || appConfigModule;
   } catch (error) {
     throw new Error(
       `Error loading Remix config in ${configFile}\n${String(error)}`
@@ -287,6 +291,9 @@ export async function readConfig(
     appConfig.serverModuleFormat || "cjs";
   let serverPlatform: ServerPlatform = appConfig.serverPlatform || "node";
   switch (appConfig.serverBuildTarget) {
+    case "node":
+      serverModuleFormat = "esm";
+      break;
     case "cloudflare-pages":
     case "cloudflare-workers":
     case "deno":
@@ -330,6 +337,9 @@ export async function readConfig(
       break;
     case "vercel":
       serverBuildPath = "api/index.js";
+      break;
+    case "node":
+      serverBuildPath = "build/index.mjs";
       break;
   }
   serverBuildPath = path.resolve(rootDirectory, serverBuildPath);
@@ -428,13 +438,26 @@ function addTrailingSlash(path: string): string {
   return path.endsWith("/") ? path : path + "/";
 }
 
-const entryExts = [".js", ".jsx", ".ts", ".tsx"];
-
-function findEntry(dir: string, basename: string): string | undefined {
-  for (let ext of entryExts) {
+function findByExtension(
+  exts: string[],
+  dir: string,
+  basename: string
+): string | undefined {
+  for (let ext of exts) {
     let file = path.resolve(dir, basename + ext);
-    if (fse.existsSync(file)) return path.relative(dir, file);
+    if (fse.existsSync(file)) return file;
   }
 
   return undefined;
 }
+
+const entryExts = [".js", ".jsx", ".ts", ".tsx"];
+
+function findEntry(dir: string, basename: string): string | undefined {
+  let file = findByExtension(entryExts, dir, basename);
+  return file ? path.relative(dir, file) : undefined;
+}
+
+const configExts = [".js", ".mjs", ".cjs"];
+
+const findConfig = findByExtension.bind(null, configExts);

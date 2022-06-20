@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { PassThrough } from "stream";
 
-import { createFixtureProject, js, json } from "./helpers/create-fixture";
+import { createFixtureProject, js, json } from "./helpers/create-fixture.js";
 
 let buildOutput: string;
 

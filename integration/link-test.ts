@@ -5,9 +5,9 @@ import {
   js,
   createFixture,
   createAppFixture,
-} from "./helpers/create-fixture";
+} from "./helpers/create-fixture.js";
 import type { Fixture, AppFixture } from "./helpers/create-fixture";
-import { PlaywrightFixture } from "./helpers/playwright-fixture";
+import { PlaywrightFixture } from "./helpers/playwright-fixture.js";
 
 const fakeGists = [
   {

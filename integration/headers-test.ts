@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-import { createFixture, js } from "./helpers/create-fixture";
+import { createFixture, js } from "./helpers/create-fixture.js";
 import type { Fixture } from "./helpers/create-fixture";
 
 test.describe("headers export", () => {

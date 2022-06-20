@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import fs from "fs/promises";
 import path from "path";
 
-import { createFixtureProject, js, json } from "./helpers/create-fixture";
+import { createFixtureProject, js, json } from "./helpers/create-fixture.js";
 
 test.describe("cloudflare compiler", () => {
   let projectDir: string;

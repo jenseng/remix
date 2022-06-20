@@ -1,9 +1,17 @@
 import * as path from "path";
 import { test, expect } from "@playwright/test";
+import { fileURLToPath } from "url";
 
-import { PlaywrightFixture } from "./helpers/playwright-fixture";
+import { PlaywrightFixture } from "./helpers/playwright-fixture.js";
 import type { Fixture, AppFixture } from "./helpers/create-fixture";
-import { createAppFixture, createFixture, js } from "./helpers/create-fixture";
+import {
+  createAppFixture,
+  createFixture,
+  js,
+} from "./helpers/create-fixture.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let fixture: Fixture;
 let appFixture: AppFixture;
@@ -175,7 +183,11 @@ test.beforeAll(async () => {
   appFixture = await createAppFixture(fixture);
 });
 
-test.afterAll(async () => appFixture.close());
+test.afterAll(async ({ browser }) => {
+  // close the browser, because post-upload TCP conns never seem to close otherwise 🤷‍♂️
+  await browser.close();
+  await appFixture.close();
+});
 
 test("can upload a file with createFileUploadHandler", async ({ page }) => {
   let app = new PlaywrightFixture(appFixture, page);

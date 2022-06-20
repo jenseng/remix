@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
-import * as fse from "fs-extra";
+import fse from "fs-extra";
 import path from "path";
 import shell from "shelljs";
 import glob from "glob";
 
-import { createFixtureProject, js, json } from "./helpers/create-fixture";
+import { createFixtureProject, js, json } from "./helpers/create-fixture.js";
 
 let projectDir: string;
 

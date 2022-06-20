@@ -97,38 +97,43 @@ When you import a third party module, Remix checks the `package.json` of that pa
 
 ## Importing ESM Packages
 
-You may try importing an ESM-only package into your app and see an error like this when server rendering:
+You may try importing an [ESM-only package](https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c) into your app and see an error like this when server rendering:
 
 ```
 Error [ERR_REQUIRE_ESM]: require() of ES Module /app/node_modules/dot-prop/index.js from /app/project/build/index.js not supported.
 Instead change the require of /app/project/node_modules/dot-prop/index.js in /app/project/build/index.js to a dynamic import() which is available in all CommonJS modules.
 ```
 
-To fix it, add the ESM package to the `serverDependenciesToBundle` option in your `remix.config.js` file.
+To fix it, you have two options:
 
-In our case here we're using the `dot-prop` package, so we would do it like this:
+1. Switch your entire server build to ESM by setting `serverBuildTarget: "node"` in your `remix.config.js`.
+2. Add the ESM package to the `serverDependenciesToBundle` option in your `remix.config.js` file.
 
-```js filename=remix.config.js
-/** @type {import('@remix-run/dev').AppConfig} */
-module.exports = {
-  serverDependenciesToBundle: ["dot-prop"],
-  // ...
-};
-```
+   In our case here we're using the `dot-prop` package, so we would do it like this:
+
+   ```js filename=remix.config.js
+   /** @type {import('@remix-run/dev').AppConfig} */
+   module.exports = {
+     serverDependenciesToBundle: ["dot-prop"],
+     // ...
+   };
+   ```
 
 > Why does this happen?
 
-Remix compiles your server build to CJS and doesn't bundle your node modules. CJS modules can't import ESM modules.
+By default, Remix compiles your server build to CJS and doesn't bundle your node modules. The compiler converts all `import`s to `require`s, which does not work for ESM-only packages.
 
-Adding packages to `serverDependenciesToBundle` tells Remix to bundle the ESM module directly into the server build instead of requiring it at runtime.
+Setting `serverBuildTarget: "node"` tells Remix to bundle the server build for ESM instead of CJS. This allows any ESM packages to be `import`ed natively. CJS packages can also be `import`ed from ESM, provided that they are well-behaved (e.g. provide an [exports map](https://nodejs.org/api/packages.html#exports) to allow sub-module imports).
+
+Alternatively, adding ESM packages to `serverDependenciesToBundle` tells Remix to bundle them directly into the server build instead of trying to `require` them at runtime.
 
 > Isn't ESM the future?
 
-Yes! Our plan is to allow you to compile your app to ESM on the server. However, that will come with the reverse problem of not being able to import some CommonJS modules that are incompatible with being imported from ESM! So even when we get there, we may still need this configuration.
+Yes! Setting `"serverBuildTarget": "node"` allows you to use ESM today. However, that comes with the reverse problem of CJS packages with ESM compatibility issues. For example, `react@17` [has no exports map](https://github.com/facebook/react/issues/20235), though you can work around it by specifying the file extension for sub-module imports (e.g. `import { renderToString } from "react-dom/server.js";`). So CJS is still the default for now, and the `serverDependenciesToBundle` escape hatch lets you use ESM packages within a CJS build.
 
 You may ask why we don't just bundle everything for the server. We could, but that will slow down builds and make production stack traces all point to a single file for your entire app. We don't want to do that. We know we can smooth this over eventually without making that tradeoff.
 
-With major deployment platforms now supporting ESM server side, we're confident the future is brighter than the past here. We're still working on a solid dev experience for ESM server builds, our current approach relies on some things that you can't do in ESM. We'll get there.
+With major deployment platforms and libraries like React@18 now supporting ESM, we're confident the future is brighter than the past here. We're still working on a solid dev experience for ESM server builds, but we'll get there.
 
 ## `typeof window` checks
 
